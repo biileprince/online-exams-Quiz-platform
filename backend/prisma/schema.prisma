@@ -1,0 +1,106 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  LECTURER
+  ADMIN
+}
+
+enum QuestionType {
+  MCQ
+  FILL_IN_BLANK
+  DRAG_DROP
+  SEQUENCING
+  MATCHING
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(STUDENT)
+  indexNumber  String?   // For students
+  course       String?   // For students
+  
+  createdExams Exam[]    @relation("ExamCreator")
+  participants ExamParticipant[]
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Exam {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  durationMin Int      // Duration in minutes
+  startTime   DateTime
+  endTime     DateTime
+  password    String?  // Optional password for students to start the exam
+  
+  creatorId   String
+  creator     User     @relation("ExamCreator", fields: [creatorId], references: [id])
+  
+  questions   Question[]
+  participants ExamParticipant[]
+
+  createdAt   DateTime @default(now())
+}
+
+model ExamParticipant {
+  id          String   @id @default(uuid())
+  examId      String
+  userId      String
+  
+  exam        Exam     @relation(fields: [examId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  
+  status      String   @default("ASSIGNED") // ASSIGNED, IN_PROGRESS, COMPLETED
+  score       Float?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  submissions Submission[]
+
+  @@unique([examId, userId]) // Prevent duplicate assignments
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  examId        String
+  type          QuestionType
+  content       String       // Question text or prompt
+  
+  // Stored as JSON to accommodate different question types (Options, Blanks, Pairs)
+  metadata      Json         
+  correctAnswer Json         // Grading blueprint
+  marks         Float        @default(1.0)
+  
+  exam          Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  submissions   Submission[]
+}
+
+model Submission {
+  id            String   @id @default(uuid())
+  participantId String
+  questionId    String
+  
+  givenAnswer   Json     // The answer provided by the student
+  isCorrect     Boolean  @default(false)
+  scoreEarned   Float    @default(0.0)
+
+  participant   ExamParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  question      Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, questionId]) // One final answer per question
+}
