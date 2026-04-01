@@ -7,12 +7,22 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailsModule } from './emails/emails.module';
 import { ExamsModule } from './exams/exams.module';
-import { BullModule } from '@nestjs/bullmq';
 import { QuestionsModule } from './questions/questions.module';
+import { RealtimeModule } from './realtime/realtime.module';
+import { BullModule } from '@nestjs/bullmq';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    RedisModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'single',
+        url: `redis://${configService.get('REDIS_HOST') || 'localhost'}:${configService.get('REDIS_PORT') || 6379}`,
+      }),
+      inject: [ConfigService],
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -29,6 +39,7 @@ import { QuestionsModule } from './questions/questions.module';
     EmailsModule,
     ExamsModule,
     QuestionsModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
