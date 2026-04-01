@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailsModule } from './emails/emails.module';
 import { ExamsModule } from './exams/exams.module';
 import { BullModule } from '@nestjs/bullmq';
+import { QuestionsModule } from './questions/questions.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { BullModule } from '@nestjs/bullmq';
     AuthModule,
     EmailsModule,
     ExamsModule,
+    QuestionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
