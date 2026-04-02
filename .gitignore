@@ -1,2 +1,6 @@
 # Local instruction/prompt documents
 *.instructions.md
+
+# Local planning/accidental root npm lockfile
+implementation_plan.md
+/package-lock.json
