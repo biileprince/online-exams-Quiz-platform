@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 interface ErrorBoundaryProps {
   error: Error & { digest?: string };
@@ -15,15 +14,18 @@ export default function RootError({ error, reset }: ErrorBoundaryProps) {
   }, [error]);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-12">
-      <Card title="Something went wrong" subtitle="An unexpected error occurred">
-        <p className="text-sm text-[var(--color-text-muted)]">
-          {error.message || "Please try again or contact support."}
+    <main className="flex min-h-screen items-center justify-center px-8">
+      <div className="max-w-sm text-center">
+        <h1 className="text-2xl font-bold text-[var(--color-on-surface)]">
+          Something went wrong
+        </h1>
+        <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
+          {error.message || "An unexpected error occurred. Please try again."}
         </p>
-        <div className="mt-5">
+        <div className="mt-6">
           <Button onClick={reset}>Try again</Button>
         </div>
-      </Card>
+      </div>
     </main>
   );
 }

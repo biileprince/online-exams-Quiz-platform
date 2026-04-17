@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { AuthGuard } from "@/components/auth-guard";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { InputField } from "@/components/ui/input-field";
 import { useSocket } from "@/contexts/socket-context";
 import {
@@ -109,7 +108,6 @@ function ManageExamPageContent() {
 
   const handleUpload = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     setUploadError(null);
     setUploadMessage(null);
 
@@ -159,194 +157,238 @@ function ManageExamPageContent() {
           { href: "/admin/exams/create", label: "Create Exam" },
         ]}
       >
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Card
-            title="Question Builder"
-            subtitle="Use JSON metadata for dynamic question logic"
-          >
-            <form className="space-y-4" onSubmit={handleAddQuestion}>
-              <InputField
-                label="Question content"
-                value={questionDraft.content}
-                onChange={(event) =>
-                  setQuestionDraft((current) => ({
-                    ...current,
-                    content: event.target.value,
-                  }))
-                }
-                required
-              />
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Left: Question Builder */}
+          <div className="space-y-6">
+            <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white p-6">
+              <h2 className="text-base font-semibold text-[var(--color-on-surface)]">
+                Question Builder
+              </h2>
+              <p className="mb-5 text-sm text-[var(--color-on-surface-variant)]">
+                Use JSON metadata for dynamic question logic
+              </p>
 
-              <label className="space-y-2 block">
-                <span className="text-sm font-medium text-[var(--color-text-strong)]">
-                  Question type
-                </span>
-                <select
-                  value={questionDraft.type}
+              <form className="space-y-4" onSubmit={handleAddQuestion}>
+                <InputField
+                  label="Question content"
+                  value={questionDraft.content}
                   onChange={(event) =>
                     setQuestionDraft((current) => ({
                       ...current,
-                      type: event.target.value as CreateQuestionPayload["type"],
+                      content: event.target.value,
                     }))
                   }
-                  className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm"
-                >
-                  <option value="MCQ">MCQ</option>
-                  <option value="FILL_IN_BLANK">Fill in blank</option>
-                  <option value="DRAG_DROP">Drag drop</option>
-                  <option value="SEQUENCING">Sequencing</option>
-                  <option value="MATCHING">Matching</option>
-                </select>
-              </label>
-
-              <InputField
-                label="Marks"
-                type="number"
-                min={1}
-                step={1}
-                value={questionDraft.marks}
-                onChange={(event) =>
-                  setQuestionDraft((current) => ({
-                    ...current,
-                    marks: Number(event.target.value),
-                  }))
-                }
-              />
-
-              <label className="space-y-2 block">
-                <span className="text-sm font-medium text-[var(--color-text-strong)]">
-                  Metadata JSON
-                </span>
-                <textarea
-                  className="min-h-28 w-full rounded-xl border border-[var(--color-border)] bg-white p-3 text-sm"
-                  value={JSON.stringify(questionDraft.metadata, null, 2)}
-                  onChange={(event) => {
-                    try {
-                      const metadata = JSON.parse(event.target.value) as Record<
-                        string,
-                        unknown
-                      >;
-                      setQuestionDraft((current) => ({ ...current, metadata }));
-                      setLoadError(null);
-                    } catch {
-                      setLoadError("Metadata must be valid JSON");
-                    }
-                  }}
+                  required
                 />
-              </label>
 
-              <label className="space-y-2 block">
-                <span className="text-sm font-medium text-[var(--color-text-strong)]">
-                  Correct answer JSON
-                </span>
-                <textarea
-                  className="min-h-28 w-full rounded-xl border border-[var(--color-border)] bg-white p-3 text-sm"
-                  value={JSON.stringify(questionDraft.correctAnswer, null, 2)}
-                  onChange={(event) => {
-                    try {
-                      const correctAnswer = JSON.parse(
-                        event.target.value,
-                      ) as Record<string, unknown>;
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-medium text-[var(--color-on-surface)]">
+                    Question type
+                  </span>
+                  <select
+                    value={questionDraft.type}
+                    onChange={(event) =>
                       setQuestionDraft((current) => ({
                         ...current,
-                        correctAnswer,
-                      }));
-                      setLoadError(null);
-                    } catch {
-                      setLoadError("Correct answer must be valid JSON");
+                        type: event.target
+                          .value as CreateQuestionPayload["type"],
+                      }))
                     }
-                  }}
+                    className="h-11 w-full rounded-lg border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                  >
+                    <option value="MCQ">MCQ</option>
+                    <option value="FILL_IN_BLANK">Fill in blank</option>
+                    <option value="DRAG_DROP">Drag drop</option>
+                    <option value="SEQUENCING">Sequencing</option>
+                    <option value="MATCHING">Matching</option>
+                  </select>
+                </label>
+
+                <InputField
+                  label="Marks"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={questionDraft.marks}
+                  onChange={(event) =>
+                    setQuestionDraft((current) => ({
+                      ...current,
+                      marks: Number(event.target.value),
+                    }))
+                  }
                 />
-              </label>
 
-              <Button type="submit" className="w-full">
-                Add question
-              </Button>
-            </form>
-          </Card>
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-medium text-[var(--color-on-surface)]">
+                    Metadata JSON
+                  </span>
+                  <textarea
+                    className="min-h-24 w-full rounded-lg border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] p-3 font-mono text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                    value={JSON.stringify(questionDraft.metadata, null, 2)}
+                    onChange={(event) => {
+                      try {
+                        const metadata = JSON.parse(
+                          event.target.value,
+                        ) as Record<string, unknown>;
+                        setQuestionDraft((current) => ({
+                          ...current,
+                          metadata,
+                        }));
+                        setLoadError(null);
+                      } catch {
+                        setLoadError("Metadata must be valid JSON");
+                      }
+                    }}
+                  />
+                </label>
 
-          <Card
-            title="Bulk Student Upload"
-            subtitle="Queue Excel processing on the backend"
-          >
-            <div className="mb-6 rounded-xl border border-[var(--color-border)] bg-white/70 p-4">
-              <h3 className="text-base font-semibold text-[var(--color-text-strong)]">
-                Live Invigilation
-              </h3>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                Socket: {connected ? "connected" : "offline"}
-              </p>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                Students online: {onlineStudents.length}
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-medium text-[var(--color-on-surface)]">
+                    Correct answer JSON
+                  </span>
+                  <textarea
+                    className="min-h-24 w-full rounded-lg border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] p-3 font-mono text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                    value={JSON.stringify(
+                      questionDraft.correctAnswer,
+                      null,
+                      2,
+                    )}
+                    onChange={(event) => {
+                      try {
+                        const correctAnswer = JSON.parse(
+                          event.target.value,
+                        ) as Record<string, unknown>;
+                        setQuestionDraft((current) => ({
+                          ...current,
+                          correctAnswer,
+                        }));
+                        setLoadError(null);
+                      } catch {
+                        setLoadError("Correct answer must be valid JSON");
+                      }
+                    }}
+                  />
+                </label>
+
+                <Button type="submit" className="w-full">
+                  Add question
+                </Button>
+              </form>
+            </div>
+          </div>
+
+          {/* Right: Monitoring + Upload + Questions */}
+          <div className="space-y-6">
+            {/* Live monitoring */}
+            <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-[var(--color-on-surface)]">
+                  Live Invigilation
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`h-2 w-2 rounded-full ${connected ? "bg-[var(--color-success)]" : "bg-[var(--color-outline)]"}`}
+                  />
+                  <span className="text-xs font-medium text-[var(--color-on-surface-variant)]">
+                    {connected ? "Connected" : "Offline"}
+                  </span>
+                </div>
+              </div>
+
+              <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">
+                Students online: <strong>{onlineStudents.length}</strong>
               </p>
 
               {onlineStudents.length > 0 ? (
-                <ul className="mt-3 space-y-1 text-xs text-[var(--color-text-muted)]">
-                  {onlineStudents.slice(0, 6).map((userId) => (
-                    <li key={userId}>Online: {userId}</li>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {onlineStudents.slice(0, 8).map((userId) => (
+                    <span
+                      key={userId}
+                      className="rounded bg-[var(--color-primary-container)] px-2 py-1 text-xs font-medium text-[var(--color-on-primary-container)]"
+                    >
+                      {userId.slice(0, 8)}…
+                    </span>
                   ))}
-                </ul>
+                </div>
               ) : null}
 
               {focusAlerts.length > 0 ? (
-                <ul className="mt-3 space-y-1 text-xs text-[#b55050]">
+                <div className="mt-4 space-y-1">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-error)]">
+                    Focus Alerts
+                  </p>
                   {focusAlerts.map((alert, index) => (
-                    <li key={`${alert.userId}-${alert.at}-${index}`}>
-                      Focus loss: {alert.userId} at{" "}
+                    <p
+                      key={`${alert.userId}-${alert.at}-${index}`}
+                      className="text-xs text-[var(--color-on-surface-variant)]"
+                    >
+                      <span className="text-[var(--color-error)]">⚠</span>{" "}
+                      {alert.userId.slice(0, 8)}… at{" "}
                       {new Date(alert.at).toLocaleTimeString()}
-                    </li>
+                    </p>
                   ))}
-                </ul>
+                </div>
               ) : null}
             </div>
 
-            <form onSubmit={handleUpload} className="space-y-4">
-              <input
-                type="file"
-                name="students-file"
-                accept=".xlsx,.xls,.csv"
-                className="block w-full rounded-xl border border-[var(--color-border)] bg-white p-3 text-sm"
-              />
-              <Button type="submit" className="w-full">
-                Upload students file
-              </Button>
-              {uploadMessage ? (
-                <p className="text-sm text-[#2a7b56]">{uploadMessage}</p>
-              ) : null}
-              {uploadError ? (
-                <p className="text-sm text-[#b55050]">{uploadError}</p>
-              ) : null}
-            </form>
+            {/* Bulk upload */}
+            <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white p-6">
+              <h2 className="text-base font-semibold text-[var(--color-on-surface)]">
+                Bulk Student Upload
+              </h2>
+              <p className="mb-4 text-sm text-[var(--color-on-surface-variant)]">
+                Queue Excel processing on the backend
+              </p>
 
-            <div className="mt-6 border-t border-[var(--color-border)] pt-5">
-              <h3 className="text-base font-semibold text-[var(--color-text-strong)]">
+              <form onSubmit={handleUpload} className="space-y-3">
+                <input
+                  type="file"
+                  name="students-file"
+                  accept=".xlsx,.xls,.csv"
+                  className="block w-full rounded-lg border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] p-3 text-sm"
+                />
+                <Button type="submit" className="w-full">
+                  Upload students file
+                </Button>
+                {uploadMessage ? (
+                  <p className="text-sm text-[var(--color-success)]">{uploadMessage}</p>
+                ) : null}
+                {uploadError ? (
+                  <p className="text-sm text-[var(--color-error)]">{uploadError}</p>
+                ) : null}
+              </form>
+            </div>
+
+            {/* Current questions */}
+            <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white p-6">
+              <h2 className="text-base font-semibold text-[var(--color-on-surface)]">
                 Current Questions
-              </h3>
+              </h2>
               {loadError ? (
-                <p className="mt-2 text-sm text-[#b55050]">{loadError}</p>
+                <p className="mt-3 text-sm text-[var(--color-error)]">{loadError}</p>
               ) : questions.length === 0 ? (
-                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">
                   No questions added yet.
                 </p>
               ) : (
-                <ul className="mt-3 space-y-3 text-sm">
+                <div className="mt-3 divide-y divide-[var(--color-outline-variant)]/10">
                   {questions.map((question, index) => (
-                    <li
-                      key={question.id}
-                      className="rounded-lg bg-white/65 p-3"
-                    >
-                      <p className="font-semibold text-[var(--color-text-strong)]">
-                        Q{index + 1}: {question.type}
+                    <div key={question.id} className="py-3">
+                      <p className="text-sm font-medium text-[var(--color-on-surface)]">
+                        Q{index + 1}{" "}
+                        <span className="ml-1 rounded bg-[var(--color-surface-container-high)] px-1.5 py-0.5 text-[10px] font-bold uppercase text-[var(--color-primary)]">
+                          {question.type}
+                        </span>
                       </p>
-                      <p className="text-[var(--color-text)]">
+                      <p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">
                         {question.content}
                       </p>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
-          </Card>
+          </div>
         </div>
       </AppShell>
     </AuthGuard>
@@ -357,8 +399,8 @@ export default function ManageExamPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-6 text-sm text-[var(--color-text-muted)]">
-          Loading exam...
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-outline-variant)] border-t-[var(--color-primary)]" />
         </div>
       }
     >

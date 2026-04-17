@@ -9,9 +9,7 @@ import {
   useState,
 } from "react";
 import { useParams } from "next/navigation";
-import { AppShell } from "@/components/app-shell";
 import { AuthGuard } from "@/components/auth-guard";
-import { Card } from "@/components/ui/card";
 import { useSocket } from "@/contexts/socket-context";
 import { fetchQuestionsByExam } from "@/lib/exams-api";
 import type { Question } from "@/types/exam";
@@ -33,6 +31,14 @@ interface TimerSyncPayload {
 const SAVE_DEBOUNCE_MS = 350;
 const SAVE_ACK_TIMEOUT_MS = 2500;
 const MAX_SAVE_RETRIES = 3;
+
+const SAVE_LABELS: Record<SaveStatus["status"], { label: string; color: string }> = {
+  idle: { label: "", color: "" },
+  queued: { label: "Queued", color: "text-[var(--color-outline)]" },
+  saving: { label: "Saving…", color: "text-[var(--color-primary)]" },
+  saved: { label: "Saved", color: "text-[var(--color-success)]" },
+  error: { label: "Retry failed", color: "text-[var(--color-error)]" },
+};
 
 function StudentExamArenaPageContent() {
   const params = useParams<{ examId: string }>();
@@ -99,7 +105,6 @@ function StudentExamArenaPageContent() {
         if (current === null) {
           return current;
         }
-
         return current > 0 ? current - 1 : 0;
       });
     }, 1000);
@@ -127,10 +132,7 @@ function StudentExamArenaPageContent() {
 
       let settled = false;
       const timeoutId = setTimeout(() => {
-        if (settled) {
-          return;
-        }
-
+        if (settled) return;
         settled = true;
         const nextAttempt = attempt + 1;
         if (nextAttempt > MAX_SAVE_RETRIES) {
@@ -138,7 +140,6 @@ function StudentExamArenaPageContent() {
           setSaveStatuses((current) => ({ ...current, [questionId]: "error" }));
           return;
         }
-
         setSaveStatuses((current) => ({ ...current, [questionId]: "queued" }));
         attemptSave(questionId, answer, nextAttempt);
       }, SAVE_ACK_TIMEOUT_MS);
@@ -147,10 +148,7 @@ function StudentExamArenaPageContent() {
         "save_answer",
         { examId, questionId, answer },
         (ack?: { status?: string }) => {
-          if (settled) {
-            return;
-          }
-
+          if (settled) return;
           settled = true;
           clearTimeout(timeoutId);
 
@@ -202,10 +200,7 @@ function StudentExamArenaPageContent() {
   );
 
   useEffect(() => {
-    if (!connected) {
-      return;
-    }
-
+    if (!connected) return;
     Object.entries(pendingAnswersRef.current).forEach(
       ([questionId, answer]) => {
         attemptSave(questionId, answer);
@@ -214,14 +209,16 @@ function StudentExamArenaPageContent() {
   }, [connected, attemptSave]);
 
   const formattedTimer = useMemo(() => {
-    if (remainingSeconds === null) {
-      return "--:--";
-    }
-
-    const minutes = Math.floor(remainingSeconds / 60);
-    const seconds = remainingSeconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    if (remainingSeconds === null) return "--:--:--";
+    const hrs = Math.floor(remainingSeconds / 3600);
+    const mins = Math.floor((remainingSeconds % 3600) / 60);
+    const secs = remainingSeconds % 60;
+    return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   }, [remainingSeconds]);
+
+  const answeredCount = Object.keys(answers).filter(
+    (qId) => answers[qId]?.trim(),
+  ).length;
 
   const saveAnswer = (questionId: string, answer: string) => {
     setAnswers((current) => ({ ...current, [questionId]: answer }));
@@ -230,57 +227,155 @@ function StudentExamArenaPageContent() {
 
   return (
     <AuthGuard allowedRoles={["STUDENT"]}>
-      <AppShell
-        title="Exam Arena"
-        links={[{ href: "/student/dashboard", label: "Back to dashboard" }]}
-      >
-        <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
-          <Card title="Live Session" subtitle="Socket and anti-cheat status">
-            <p className="text-sm">
-              Socket connection:{" "}
-              <strong>{connected ? "Online" : "Offline"}</strong>
-            </p>
-            <p className="mt-2 text-sm">
-              Local countdown: <strong>{formattedTimer}</strong>
-            </p>
-          </Card>
+      <div className="min-h-screen">
+        {/* Fixed header */}
+        <header className="sticky top-0 z-50 border-b border-[var(--color-outline-variant)]/15 bg-white/80 backdrop-blur-xl">
+          <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-8">
+            <div className="flex items-center gap-6">
+              <span className="text-xl font-bold tracking-tighter text-[var(--color-on-surface)]">
+                ExamPlatform
+              </span>
+              <div className="h-6 w-px bg-[var(--color-outline-variant)]/30" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--color-on-surface-variant)]">
+                  Active Session
+                </span>
+                <span className="text-sm font-semibold text-[var(--color-on-surface)]">
+                  Exam Arena
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--color-primary)]/10 bg-[var(--color-surface-container-high)] px-4 py-2">
+                <span className="font-mono text-lg font-bold tracking-tight text-[var(--color-primary)]">
+                  {formattedTimer}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`h-2 w-2 rounded-full ${connected ? "bg-[var(--color-success)]" : "bg-[var(--color-error)]"}`}
+                />
+                <span className="text-xs font-medium text-[var(--color-on-surface-variant)]">
+                  {connected ? "Online" : "Offline"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
 
-          <Card
-            title="Questions"
-            subtitle="Every answer is persisted immediately"
-          >
-            {questions.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">
-                No questions loaded for this exam.
-              </p>
-            ) : (
-              <ul className="space-y-4">
-                {questions.map((question, index) => (
-                  <li
-                    key={question.id}
-                    className="rounded-xl border border-[var(--color-border)] bg-white/75 p-4"
-                  >
-                    <p className="font-semibold text-[var(--color-text-strong)]">
-                      {index + 1}. {question.content}
-                    </p>
-                    <textarea
-                      className="mt-3 min-h-24 w-full rounded-xl border border-[var(--color-border)] p-3 text-sm"
-                      value={answers[question.id] ?? ""}
-                      onChange={(event) =>
-                        saveAnswer(question.id, event.target.value)
+        <div className="flex">
+          {/* Sidebar — Question Navigator */}
+          <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-72 flex-col border-r border-[var(--color-outline-variant)]/10 bg-[var(--color-surface-container)] p-6 lg:flex">
+            <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
+              Question Navigator
+            </h2>
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-5 gap-2">
+                {questions.map((q, i) => {
+                  const isAnswered = Boolean(answers[q.id]?.trim());
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() =>
+                        document
+                          .getElementById(`question-${q.id}`)
+                          ?.scrollIntoView({ behavior: "smooth", block: "center" })
                       }
-                      placeholder="Type your answer..."
-                    />
-                    <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-                      Auto-save: {saveStatuses[question.id] ?? "idle"}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+                      className={`flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                        isAnswered
+                          ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                          : "border border-[var(--color-outline-variant)]/30 bg-white text-[var(--color-on-surface-variant)] hover:bg-white/80"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Progress */}
+            <div className="mt-auto border-t border-[var(--color-outline-variant)]/10 pt-4">
+              <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)]">
+                <span>Progress</span>
+                <span>
+                  {Math.round(
+                    (answeredCount / Math.max(questions.length, 1)) * 100,
+                  )}
+                  % ({answeredCount}/{questions.length})
+                </span>
+              </div>
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-container-high)]">
+                <div
+                  className="h-full bg-[var(--color-primary)] transition-all"
+                  style={{
+                    width: `${(answeredCount / Math.max(questions.length, 1)) * 100}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-3 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[var(--color-on-surface-variant)]">
+                  <div className="h-3 w-3 rounded bg-[var(--color-primary)]" />
+                  <span>Answered</span>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-[var(--color-on-surface-variant)]">
+                  <div className="h-3 w-3 rounded border border-[var(--color-outline-variant)]/30 bg-white" />
+                  <span>Unanswered</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main content */}
+          <main className="flex-1 p-8 md:p-12">
+            <div className="mx-auto max-w-3xl space-y-12">
+              {questions.length === 0 ? (
+                <p className="text-sm text-[var(--color-on-surface-variant)]">
+                  No questions loaded for this exam.
+                </p>
+              ) : (
+                questions.map((question, index) => {
+                  const status = saveStatuses[question.id] ?? "idle";
+                  const statusInfo = SAVE_LABELS[status];
+
+                  return (
+                    <div
+                      key={question.id}
+                      id={`question-${question.id}`}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <span className="rounded bg-[var(--color-surface-container-high)] px-3 py-1 text-xs font-bold text-[var(--color-primary)]">
+                          QUESTION {index + 1}
+                        </span>
+                        {statusInfo.label ? (
+                          <span className={`text-xs font-medium ${statusInfo.color}`}>
+                            {statusInfo.label}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="rounded-xl border border-[var(--color-outline-variant)]/5 bg-white p-8">
+                        <p className="text-lg font-medium leading-relaxed text-[var(--color-on-surface)]">
+                          {question.content}
+                        </p>
+                        <textarea
+                          className="mt-6 min-h-24 w-full rounded-lg border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] p-4 text-sm outline-none transition-all focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                          value={answers[question.id] ?? ""}
+                          onChange={(event) =>
+                            saveAnswer(question.id, event.target.value)
+                          }
+                          placeholder="Type your answer…"
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </main>
         </div>
-      </AppShell>
+      </div>
     </AuthGuard>
   );
 }
@@ -289,8 +384,8 @@ export default function StudentExamArenaPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-6 text-sm text-[var(--color-text-muted)]">
-          Loading exam...
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-outline-variant)] border-t-[var(--color-primary)]" />
         </div>
       }
     >

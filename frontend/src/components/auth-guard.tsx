@@ -32,8 +32,8 @@ export function AuthGuard({ allowedRoles, children }: AuthGuardProps) {
 
   if (isBootstrapping) {
     return (
-      <div className="mx-auto flex min-h-[60vh] w-full max-w-3xl items-center justify-center px-4 text-[var(--color-text)]">
-        Loading session...
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-outline-variant)] border-t-[var(--color-primary)]" />
       </div>
     );
   }

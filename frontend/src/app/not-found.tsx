@@ -1,15 +1,22 @@
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-12">
-      <Card title="Page not found" subtitle="The page you requested does not exist">
-        <Link href="/">
-          <Button variant="secondary">Go home</Button>
-        </Link>
-      </Card>
+    <main className="flex min-h-screen items-center justify-center px-8">
+      <div className="max-w-sm text-center">
+        <h1 className="text-2xl font-bold text-[var(--color-on-surface)]">
+          Page not found
+        </h1>
+        <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
+          The page you requested does not exist.
+        </p>
+        <div className="mt-6">
+          <Link href="/">
+            <Button variant="secondary">Go home</Button>
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }

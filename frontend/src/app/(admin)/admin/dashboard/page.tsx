@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { AuthGuard } from "@/components/auth-guard";
-import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { fetchExams } from "@/lib/exams-api";
 import type { ExamSummary } from "@/types/exam";
 
@@ -29,38 +29,73 @@ export default function AdminDashboardPage() {
           { href: "/admin/exams/create", label: "Create Exam" },
         ]}
       >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Card title="Quick Actions" subtitle="Create and manage assessments">
-            <div className="space-y-2 text-sm">
-              <p>Create and publish exams with dynamic question structures.</p>
-              <Link href="/admin/exams/create" className="text-[var(--color-info)]">
-                Start a new exam
-              </Link>
-            </div>
-          </Card>
+        {/* Stats row */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
+              Total Exams
+            </p>
+            <p className="mt-2 text-3xl font-bold text-[var(--color-on-surface)]">
+              {exams.length}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
+              Quick Action
+            </p>
+            <Link href="/admin/exams/create" className="mt-2 inline-block text-sm font-medium text-[var(--color-primary)] hover:underline">
+              Create a new exam →
+            </Link>
+          </div>
+          <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
+              Platform
+            </p>
+            <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
+              Real-time Socket.IO monitoring active
+            </p>
+          </div>
+        </div>
 
-          <Card title="Live Catalog" subtitle="Most recent exams">
-            {error ? (
-              <p className="text-sm text-[#b55050]">{error}</p>
-            ) : exams.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">No exams available yet.</p>
-            ) : (
-              <ul className="space-y-3 text-sm">
-                {exams.slice(0, 6).map((exam) => (
-                  <li key={exam.id} className="rounded-lg bg-white/70 p-3">
-                    <p className="font-semibold text-[var(--color-text-strong)]">{exam.title}</p>
-                    <p className="text-[var(--color-text-muted)]">{exam.durationMin} minutes</p>
-                    <Link
-                      href={`/admin/exams/${exam.id}/manage`}
-                      className="text-[var(--color-info)]"
-                    >
-                      Manage exam
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+        {/* Exams table */}
+        <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white">
+          <div className="flex items-center justify-between border-b border-[var(--color-outline-variant)]/10 px-6 py-4">
+            <h2 className="text-base font-semibold text-[var(--color-on-surface)]">
+              Exam Catalog
+            </h2>
+            <Link href="/admin/exams/create">
+              <Button className="h-9 px-4 text-xs">+ New exam</Button>
+            </Link>
+          </div>
+          {error ? (
+            <p className="p-6 text-sm text-[var(--color-error)]">{error}</p>
+          ) : exams.length === 0 ? (
+            <p className="p-6 text-sm text-[var(--color-on-surface-variant)]">
+              No exams available yet. Create your first exam to get started.
+            </p>
+          ) : (
+            <div className="divide-y divide-[var(--color-outline-variant)]/10">
+              {exams.map((exam) => (
+                <div key={exam.id} className="flex items-center justify-between px-6 py-4">
+                  <div>
+                    <p className="font-medium text-[var(--color-on-surface)]">
+                      {exam.title}
+                    </p>
+                    <p className="text-sm text-[var(--color-on-surface-variant)]">
+                      {exam.durationMin} min &middot; Starts{" "}
+                      {new Date(exam.startTime).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/admin/exams/${exam.id}/manage`}
+                    className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+                  >
+                    Manage
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </AppShell>
     </AuthGuard>

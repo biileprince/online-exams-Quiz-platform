@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { AuthGuard } from "@/components/auth-guard";
-import { Card } from "@/components/ui/card";
 import { fetchExams } from "@/lib/exams-api";
 import type { ExamSummary } from "@/types/exam";
 
@@ -28,39 +27,45 @@ export default function StudentDashboardPage() {
         title="Student Dashboard"
         links={[{ href: "/student/dashboard", label: "Available Exams" }]}
       >
-        <Card
-          title="Assigned Exams"
-          subtitle="Enter the arena and start answering"
-        >
-          {error ? <p className="text-sm text-[#b55050]">{error}</p> : null}
-          {exams.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-muted)]">
+        <div className="rounded-xl border border-[var(--color-outline-variant)]/10 bg-white">
+          <div className="border-b border-[var(--color-outline-variant)]/10 px-6 py-4">
+            <h2 className="text-base font-semibold text-[var(--color-on-surface)]">
+              Assigned Exams
+            </h2>
+            <p className="text-sm text-[var(--color-on-surface-variant)]">
+              Select an exam to enter the arena and start answering
+            </p>
+          </div>
+          {error ? (
+            <p className="p-6 text-sm text-[var(--color-error)]">{error}</p>
+          ) : exams.length === 0 ? (
+            <p className="p-6 text-sm text-[var(--color-on-surface-variant)]">
               No exam has been published for you yet.
             </p>
           ) : (
-            <ul className="space-y-3">
+            <div className="divide-y divide-[var(--color-outline-variant)]/10">
               {exams.map((exam) => (
-                <li key={exam.id} className="rounded-xl bg-white/65 p-4">
-                  <p className="font-semibold text-[var(--color-text-strong)]">
-                    {exam.title}
-                  </p>
-                  <p className="text-sm text-[var(--color-text-muted)]">
-                    Duration: {exam.durationMin} minutes
-                  </p>
-                  <p className="text-sm text-[var(--color-text-muted)]">
-                    Starts: {new Date(exam.startTime).toLocaleString()}
-                  </p>
+                <div key={exam.id} className="flex items-center justify-between px-6 py-4">
+                  <div>
+                    <p className="font-medium text-[var(--color-on-surface)]">
+                      {exam.title}
+                    </p>
+                    <p className="text-sm text-[var(--color-on-surface-variant)]">
+                      {exam.durationMin} min &middot; Starts{" "}
+                      {new Date(exam.startTime).toLocaleString()}
+                    </p>
+                  </div>
                   <Link
-                    className="mt-2 inline-block text-sm font-medium text-[var(--color-info)]"
+                    className="text-sm font-medium text-[var(--color-primary)] hover:underline"
                     href={`/student/exam/${exam.id}`}
                   >
-                    Enter exam arena
+                    Enter exam →
                   </Link>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
-        </Card>
+        </div>
       </AppShell>
     </AuthGuard>
   );

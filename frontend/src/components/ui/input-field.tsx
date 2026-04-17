@@ -11,20 +11,19 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
     const inputId = id ?? label.toLowerCase().replace(/\s+/g, "-");
 
     return (
-      <label htmlFor={inputId} className="block space-y-2">
-        <span className="text-sm font-medium text-[var(--color-text-strong)]">
+      <label htmlFor={inputId} className={cn("block space-y-1.5", className)}>
+        <span className="text-sm font-medium text-[var(--color-on-surface)]">
           {label}
         </span>
         <input
           ref={ref}
           id={inputId}
-          className={cn(
-            "h-11 w-full rounded-xl border border-[var(--color-border)] bg-white px-4 text-sm text-[var(--color-text)] outline-none transition focus:border-[var(--color-info)] focus:ring-2 focus:ring-[var(--color-info)]/25",
-            className,
-          )}
+          className="h-11 w-full rounded-lg border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] px-4 text-sm text-[var(--color-on-surface)] outline-none transition-all duration-200 placeholder:text-[var(--color-outline)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15"
           {...props}
         />
-        {error ? <span className="text-sm text-[#b55050]">{error}</span> : null}
+        {error ? (
+          <span className="text-sm text-[var(--color-error)]">{error}</span>
+        ) : null}
       </label>
     );
   },
