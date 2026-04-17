@@ -7,12 +7,10 @@ import { AuthGuard } from "@/components/auth-guard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InputField } from "@/components/ui/input-field";
-import { useAuth } from "@/contexts/auth-context";
 import { createExam } from "@/lib/exams-api";
 
 export default function CreateExamPage() {
   const router = useRouter();
-  const { accessToken } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [durationMin, setDurationMin] = useState(60);
@@ -24,16 +22,12 @@ export default function CreateExamPage() {
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!accessToken) {
-      setError("You must be signed in to create an exam.");
-      return;
-    }
 
     setSaving(true);
     setError(null);
 
     try {
-      const exam = await createExam(accessToken, {
+      const exam = await createExam({
         title,
         description: description || undefined,
         durationMin,

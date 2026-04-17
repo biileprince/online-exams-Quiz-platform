@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Socket } from "socket.io-client";
+import { getSocketToken } from "@/lib/auth-api";
 import { connectSocket } from "@/lib/socket";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -13,29 +14,51 @@ interface SocketContextValue {
 const SocketContext = createContext<SocketContextValue | null>(null);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const { accessToken } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (!accessToken) {
-      socket?.disconnect();
+    let cancelled = false;
+
+    const disconnectCurrentSocket = () => {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
       setSocket(null);
       setConnected(false);
+    };
+
+    if (!isAuthenticated) {
+      disconnectCurrentSocket();
       return;
     }
 
-    const nextSocket = connectSocket(accessToken);
-    setSocket(nextSocket);
+    const connect = async () => {
+      try {
+        const { token } = await getSocketToken();
+        if (cancelled) {
+          return;
+        }
 
-    nextSocket.on("connect", () => setConnected(true));
-    nextSocket.on("disconnect", () => setConnected(false));
+        const nextSocket = connectSocket(token);
+        socketRef.current = nextSocket;
+        setSocket(nextSocket);
+
+        nextSocket.on("connect", () => setConnected(true));
+        nextSocket.on("disconnect", () => setConnected(false));
+      } catch {
+        disconnectCurrentSocket();
+      }
+    };
+
+    void connect();
 
     return () => {
-      nextSocket.disconnect();
-      setConnected(false);
+      cancelled = true;
+      disconnectCurrentSocket();
     };
-  }, [accessToken]);
+  }, [isAuthenticated]);
 
   const value = useMemo(() => ({ socket, connected }), [socket, connected]);
 

@@ -1,5 +1,3 @@
-import { API_BASE_URL } from "@/lib/config";
-
 export class ApiError extends Error {
   readonly status: number;
 
@@ -12,28 +10,38 @@ export class ApiError extends Error {
 
 interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE";
-  token?: string | null;
   body?: unknown;
   isFormData?: boolean;
+  headers?: HeadersInit;
+}
+
+function resolveUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  if (path.startsWith("/api/")) {
+    return path;
+  }
+
+  return `/api${path}`;
 }
 
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", token, body, isFormData } = options;
+  const { method = "GET", body, isFormData, headers: customHeaders } = options;
 
-  const headers = new Headers();
-  if (!isFormData) {
+  const headers = new Headers(customHeaders);
+  if (!isFormData && body !== undefined && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(resolveUrl(path), {
     method,
     headers,
+    credentials: "include",
     body: body
       ? isFormData
         ? (body as FormData)
