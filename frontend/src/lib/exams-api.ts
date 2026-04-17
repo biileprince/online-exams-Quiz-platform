@@ -6,30 +6,22 @@ import type {
   Question,
 } from "@/types/exam";
 
-export function fetchExams(token: string): Promise<ExamSummary[]> {
-  return apiRequest<ExamSummary[]>("/exams", { token });
+export function fetchExams(): Promise<ExamSummary[]> {
+  return apiRequest<ExamSummary[]>("/exams");
 }
 
-export function fetchExamById(
-  token: string,
-  examId: string,
-): Promise<ExamSummary> {
-  return apiRequest<ExamSummary>(`/exams/${examId}`, { token });
+export function fetchExamById(examId: string): Promise<ExamSummary> {
+  return apiRequest<ExamSummary>(`/exams/${examId}`);
 }
 
-export function createExam(
-  token: string,
-  payload: CreateExamPayload,
-): Promise<ExamSummary> {
+export function createExam(payload: CreateExamPayload): Promise<ExamSummary> {
   return apiRequest<ExamSummary>("/exams", {
     method: "POST",
-    token,
     body: payload,
   });
 }
 
 export function uploadStudentsFile(
-  token: string,
   examId: string,
   file: File,
 ): Promise<{ message: string; status: string; file: string }> {
@@ -40,27 +32,21 @@ export function uploadStudentsFile(
     `/exams/${examId}/upload-students`,
     {
       method: "POST",
-      token,
       body: data,
       isFormData: true,
     },
   );
 }
 
-export function fetchQuestionsByExam(
-  token: string,
-  examId: string,
-): Promise<Question[]> {
-  return apiRequest<Question[]>(`/questions/exam/${examId}`, { token });
+export function fetchQuestionsByExam(examId: string): Promise<Question[]> {
+  return apiRequest<Question[]>(`/questions/exam/${examId}`);
 }
 
 export function createQuestion(
-  token: string,
   payload: CreateQuestionPayload,
 ): Promise<Question> {
   return apiRequest<Question>("/questions", {
     method: "POST",
-    token,
     body: payload,
   });
 }

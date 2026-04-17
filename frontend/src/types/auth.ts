@@ -27,8 +27,18 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+export interface LoginResponse {
+  user: AuthUser;
+}
+
+export interface SessionResponse {
+  user: AuthUser;
+}
+
+export interface SocketTokenResponse {
+  token: string;
+}
+
 export interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
   user: AuthUser | null;
 }

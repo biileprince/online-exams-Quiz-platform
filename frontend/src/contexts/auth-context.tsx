@@ -9,11 +9,11 @@ import {
   useState,
 } from "react";
 import {
-  getCurrentUser,
+  getCurrentSession,
   login as loginRequest,
+  logout as logoutRequest,
   register as registerRequest,
 } from "@/lib/auth-api";
-import { clearAuthState, loadAuthState, saveAuthState } from "@/lib/storage";
 import type {
   AuthState,
   AuthUser,
@@ -26,14 +26,12 @@ interface AuthContextValue extends AuthState {
   isAuthenticated: boolean;
   login: (payload: LoginPayload) => Promise<AuthUser>;
   register: (payload: RegisterPayload) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const initialState: AuthState = {
-  accessToken: null,
-  refreshToken: null,
   user: null,
 };
 
@@ -42,24 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   useEffect(() => {
-    const existing = loadAuthState();
-    if (!existing?.accessToken) {
-      setIsBootstrapping(false);
-      return;
-    }
-
-    getCurrentUser(existing.accessToken)
-      .then((user) => {
-        const nextState = {
-          accessToken: existing.accessToken,
-          refreshToken: existing.refreshToken,
-          user,
-        };
-        setState(nextState);
-        saveAuthState(nextState);
+    getCurrentSession()
+      .then(({ user }) => {
+        setState({ user });
       })
       .catch(() => {
-        clearAuthState();
+        setState(initialState);
       })
       .finally(() => {
         setIsBootstrapping(false);
@@ -68,13 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (payload: LoginPayload) => {
     const response = await loginRequest(payload);
-    const nextState: AuthState = {
-      accessToken: response.access_token,
-      refreshToken: response.refresh_token,
-      user: response.user,
-    };
+    const nextState: AuthState = { user: response.user };
     setState(nextState);
-    saveAuthState(nextState);
     return response.user;
   }, []);
 
@@ -82,16 +63,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await registerRequest(payload);
   }, []);
 
-  const logout = useCallback(() => {
-    setState(initialState);
-    clearAuthState();
+  const logout = useCallback(async () => {
+    try {
+      await logoutRequest();
+    } finally {
+      setState(initialState);
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       ...state,
       isBootstrapping,
-      isAuthenticated: Boolean(state.accessToken && state.user),
+      isAuthenticated: Boolean(state.user),
       login,
       register,
       logout,
@@ -111,16 +95,14 @@ export function useAuth(): AuthContextValue {
 }
 
 export function useRequireAuth(): {
-  accessToken: string;
   user: AuthUser;
 } {
   const auth = useAuth();
-  if (!auth.accessToken || !auth.user) {
+  if (!auth.user) {
     throw new Error("User is not authenticated");
   }
 
   return {
-    accessToken: auth.accessToken,
     user: auth.user,
   };
 }

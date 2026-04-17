@@ -7,7 +7,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InputField } from "@/components/ui/input-field";
-import { useAuth } from "@/contexts/auth-context";
+import { useSocket } from "@/contexts/socket-context";
 import {
   createQuestion,
   fetchQuestionsByExam,
@@ -15,15 +15,22 @@ import {
 } from "@/lib/exams-api";
 import type { CreateQuestionPayload, Question } from "@/types/exam";
 
+interface FocusAlert {
+  userId: string;
+  at: string;
+}
+
 function ManageExamPageContent() {
   const params = useParams<{ examId: string }>();
   const examId = params.examId;
-  const { accessToken } = useAuth();
+  const { socket, connected } = useSocket();
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [onlineStudents, setOnlineStudents] = useState<string[]>([]);
+  const [focusAlerts, setFocusAlerts] = useState<FocusAlert[]>([]);
   const [questionDraft, setQuestionDraft] = useState<CreateQuestionPayload>({
     examId,
     type: "MCQ",
@@ -34,11 +41,7 @@ function ManageExamPageContent() {
   });
 
   const refreshQuestions = () => {
-    if (!accessToken) {
-      return;
-    }
-
-    fetchQuestionsByExam(accessToken, examId)
+    fetchQuestionsByExam(examId)
       .then(setQuestions)
       .catch((err) =>
         setLoadError(
@@ -49,14 +52,63 @@ function ManageExamPageContent() {
 
   useEffect(() => {
     refreshQuestions();
-  }, [accessToken, examId]);
+  }, [examId]);
+
+  useEffect(() => {
+    if (!socket || !connected) {
+      return;
+    }
+
+    socket.emit("watch_exam", { examId });
+
+    const onStudentOnline = (payload: { userId?: string }) => {
+      const id = payload.userId;
+      if (!id) {
+        return;
+      }
+
+      setOnlineStudents((current) =>
+        current.includes(id) ? current : [...current, id],
+      );
+    };
+
+    const onStudentOffline = (payload: { userId?: string }) => {
+      const id = payload.userId;
+      if (!id) {
+        return;
+      }
+
+      setOnlineStudents((current) =>
+        current.filter((userId) => userId !== id),
+      );
+    };
+
+    const onFocusAlert = (payload: { userId?: string; at?: string }) => {
+      if (!payload.userId) {
+        return;
+      }
+
+      const event: FocusAlert = {
+        userId: payload.userId,
+        at: payload.at ?? new Date().toISOString(),
+      };
+
+      setFocusAlerts((current) => [event, ...current].slice(0, 8));
+    };
+
+    socket.on("student_online", onStudentOnline);
+    socket.on("student_offline", onStudentOffline);
+    socket.on("focus_alert", onFocusAlert);
+
+    return () => {
+      socket.off("student_online", onStudentOnline);
+      socket.off("student_offline", onStudentOffline);
+      socket.off("focus_alert", onFocusAlert);
+    };
+  }, [socket, connected, examId]);
 
   const handleUpload = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!accessToken) {
-      setUploadError("You must be signed in to upload student records.");
-      return;
-    }
 
     setUploadError(null);
     setUploadMessage(null);
@@ -72,7 +124,7 @@ function ManageExamPageContent() {
     }
 
     try {
-      const response = await uploadStudentsFile(accessToken, examId, file);
+      const response = await uploadStudentsFile(examId, file);
       setUploadMessage(response.message);
       target.reset();
     } catch (err) {
@@ -82,15 +134,10 @@ function ManageExamPageContent() {
 
   const handleAddQuestion = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!accessToken) {
-      setLoadError("You must be signed in to add questions.");
-      return;
-    }
-
     setLoadError(null);
 
     try {
-      await createQuestion(accessToken, questionDraft);
+      await createQuestion(questionDraft);
       setQuestionDraft((current) => ({
         ...current,
         content: "",
@@ -222,6 +269,37 @@ function ManageExamPageContent() {
             title="Bulk Student Upload"
             subtitle="Queue Excel processing on the backend"
           >
+            <div className="mb-6 rounded-xl border border-[var(--color-border)] bg-white/70 p-4">
+              <h3 className="text-base font-semibold text-[var(--color-text-strong)]">
+                Live Invigilation
+              </h3>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                Socket: {connected ? "connected" : "offline"}
+              </p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                Students online: {onlineStudents.length}
+              </p>
+
+              {onlineStudents.length > 0 ? (
+                <ul className="mt-3 space-y-1 text-xs text-[var(--color-text-muted)]">
+                  {onlineStudents.slice(0, 6).map((userId) => (
+                    <li key={userId}>Online: {userId}</li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {focusAlerts.length > 0 ? (
+                <ul className="mt-3 space-y-1 text-xs text-[#b55050]">
+                  {focusAlerts.map((alert, index) => (
+                    <li key={`${alert.userId}-${alert.at}-${index}`}>
+                      Focus loss: {alert.userId} at{" "}
+                      {new Date(alert.at).toLocaleTimeString()}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+
             <form onSubmit={handleUpload} className="space-y-4">
               <input
                 type="file"

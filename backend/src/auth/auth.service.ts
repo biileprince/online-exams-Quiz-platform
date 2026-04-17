@@ -42,23 +42,52 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { email: user.email, sub: user.id };
-    
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'super-refresh-fallback',
-      expiresIn: '7d',
-    });
-
     return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      ...this.generateTokens(user.id, user.email),
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
       },
+    };
+  }
+
+  async refresh(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify<{ sub: string; email: string }>(
+        refreshToken,
+        {
+          secret:
+            this.configService.get<string>('JWT_REFRESH_SECRET') ||
+            'super-refresh-fallback',
+        },
+      );
+
+      const user = await this.usersService.findById(payload.sub);
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      return this.generateTokens(user.id, user.email);
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  private generateTokens(userId: string, email: string) {
+    const payload = { email, sub: userId };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, {
+      secret:
+        this.configService.get<string>('JWT_REFRESH_SECRET') ||
+        'super-refresh-fallback',
+      expiresIn: '7d',
+    });
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
     };
   }
 }

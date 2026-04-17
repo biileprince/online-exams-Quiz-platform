@@ -5,26 +5,20 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { AuthGuard } from "@/components/auth-guard";
 import { Card } from "@/components/ui/card";
-import { useAuth } from "@/contexts/auth-context";
 import { fetchExams } from "@/lib/exams-api";
 import type { ExamSummary } from "@/types/exam";
 
 export default function AdminDashboardPage() {
-  const { accessToken } = useAuth();
   const [exams, setExams] = useState<ExamSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!accessToken) {
-      return;
-    }
-
-    fetchExams(accessToken)
+    fetchExams()
       .then(setExams)
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "Unable to fetch exams");
       });
-  }, [accessToken]);
+  }, []);
 
   return (
     <AuthGuard allowedRoles={["ADMIN", "LECTURER"]}>

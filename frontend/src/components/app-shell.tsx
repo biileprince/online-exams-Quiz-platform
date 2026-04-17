@@ -17,6 +17,10 @@ export function AppShell({ title, children, links }: AppShellProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
 
+  const handleLogout = () => {
+    void logout();
+  };
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-white/70 p-5 shadow-[0_20px_40px_rgba(12,38,58,0.08)] backdrop-blur-sm">
@@ -33,7 +37,7 @@ export function AppShell({ title, children, links }: AppShellProps) {
             </p>
           ) : null}
         </div>
-        <Button variant="secondary" onClick={logout}>
+        <Button variant="secondary" onClick={handleLogout}>
           Sign out
         </Button>
       </div>
