@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { AuthGuard } from "@/components/auth-guard";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { InputField } from "@/components/ui/input-field";
 import { createExam } from "@/lib/exams-api";
 
@@ -22,7 +21,6 @@ export default function CreateExamPage() {
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     setSaving(true);
     setError(null);
 
@@ -52,7 +50,16 @@ export default function CreateExamPage() {
           { href: "/admin/exams/create", label: "Create" },
         ]}
       >
-        <Card title="Exam Details" subtitle="Define schedule and access policy" className="max-w-3xl">
+        <div className="max-w-2xl rounded-xl border border-[var(--color-outline-variant)]/10 bg-white p-8">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-[var(--color-on-surface)]">
+              Exam Details
+            </h2>
+            <p className="text-sm text-[var(--color-on-surface-variant)]">
+              Define schedule and access policy
+            </p>
+          </div>
+
           <form className="grid gap-4 sm:grid-cols-2" onSubmit={onSubmit}>
             <InputField
               label="Exam title"
@@ -62,10 +69,12 @@ export default function CreateExamPage() {
               required
             />
 
-            <label className="space-y-2 sm:col-span-2">
-              <span className="text-sm font-medium text-[var(--color-text-strong)]">Description</span>
+            <label className="block space-y-1.5 sm:col-span-2">
+              <span className="text-sm font-medium text-[var(--color-on-surface)]">
+                Description
+              </span>
               <textarea
-                className="min-h-28 w-full rounded-xl border border-[var(--color-border)] bg-white p-3 text-sm"
+                className="min-h-24 w-full rounded-lg border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] p-3 text-sm text-[var(--color-on-surface)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="Mid-semester exam instructions"
@@ -103,12 +112,14 @@ export default function CreateExamPage() {
               required
             />
 
-            {error ? <p className="text-sm text-[#b55050] sm:col-span-2">{error}</p> : null}
+            {error ? (
+              <p className="text-sm text-[var(--color-error)] sm:col-span-2">{error}</p>
+            ) : null}
             <Button type="submit" className="sm:col-span-2" disabled={saving}>
-              {saving ? "Creating exam..." : "Create and continue"}
+              {saving ? "Creating exam…" : "Create and continue"}
             </Button>
           </form>
-        </Card>
+        </div>
       </AppShell>
     </AuthGuard>
   );

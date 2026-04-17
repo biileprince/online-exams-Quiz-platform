@@ -11,11 +11,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-[var(--color-accent)] text-white shadow-[0_12px_30px_rgba(216,119,48,0.28)] hover:brightness-110",
+    "bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:opacity-90 active:scale-[0.98]",
   secondary:
-    "bg-[var(--color-panel)] text-[var(--color-text-strong)] border border-[var(--color-border)] hover:bg-[var(--color-panel-2)]",
-  danger: "bg-[#c53a3a] text-white hover:bg-[#a42f2f]",
-  ghost: "bg-transparent text-[var(--color-text)] hover:bg-white/45",
+    "border border-[var(--color-outline-variant)]/30 text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]",
+  danger:
+    "bg-[var(--color-error)] text-white hover:opacity-90",
+  ghost:
+    "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -25,7 +27,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          "inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-60",
+          "inline-flex h-11 items-center justify-center rounded-lg px-6 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40",
           variantClasses[variant],
           className,
         )}
